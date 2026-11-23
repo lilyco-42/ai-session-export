@@ -1,0 +1,32 @@
+[
+  {
+    "id": "agy",
+    "label": "AGY / Antigravity",
+    "status": "ready",
+    "sessionCount": 26
+  },
+  {
+    "id": "opencode",
+    "label": "OpenCode",
+    "status": "ready",
+    "sessionCount": 11
+  },
+  {
+    "id": "codex",
+    "label": "Codex CLI",
+    "status": "ready",
+    "sessionCount": 2
+  },
+  {
+    "id": "codearts",
+    "label": "CodeArts / CodeBuddy",
+    "status": "ready",
+    "sessionCount": 2
+  },
+  {
+    "id": "dsh",
+    "label": "DeepSeek Harness",
+    "status": "ready",
+    "sessionCount": 3
+  }
+]
