@@ -16,6 +16,23 @@ Browse and export local AI-agent conversations through a Web UI, CLI, or Lilyco 
 
 Built-in adapters cover the documented local layouts. Cloud-only history and provider-specific binary attachments are outside the text export. The server snapshots the source stores at startup.
 
+## Download a release
+
+Download the archive matching your OS and CPU from [GitHub Releases](https://github.com/lilyco-42/ai-session-export/releases). Linux and macOS archives use `.tar.gz`; Windows uses `.zip`. Each archive includes the server, Web UI, README and license. Verify the archive against `SHA256SUMS` when provided.
+
+Extract the entire archive and run `./ai-session-export-server` (Linux/macOS) or `.\ai-session-export-server.exe` (Windows PowerShell). Open `http://127.0.0.1:8788`. Keep the bundled `web/dist` beside the executable; the server locates it regardless of the working directory. CLI commands and `--mcp` work with the same executable. Linux builds target glibc-based systems (Ubuntu 22.04 or newer recommended); the archives are not signed/notarized.
+
+### Maintainer release workflow
+
+Pull requests, pushes to main and manual workflow runs build and test six native targets (Linux, macOS and Windows, each x64 and ARM64). To publish a new version, push a new `v*` tag after CI passes:
+
+```sh
+git tag v0.3.0
+git push origin v0.3.0
+```
+
+The tag workflow publishes all six packages and SHA256SUMS only after every build and smoke test passes. Tags containing a hyphen are published as prereleases. An existing published release is never overwritten.
+
 ## Run locally
 
 Install Rust, Node.js and pnpm. From the repository root:
