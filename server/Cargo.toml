@@ -1,6 +1,6 @@
 [package]
 name = "ai-session-export-server"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Local read-only AI session export server with Lilyco CLI/MCP commands"

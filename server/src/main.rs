@@ -35,7 +35,15 @@ async fn main() {
             std::process::exit(1);
         }
     };
-    let web_dir = std::env::var_os("AI_SESSION_WEB_DIR").unwrap_or_else(|| "web/dist".into());
+    let web_dir = std::env::var_os("AI_SESSION_WEB_DIR")
+        .map(std::path::PathBuf::from)
+        .or_else(|| {
+            let exe = std::env::current_exe().ok()?;
+            let exe = exe.canonicalize().unwrap_or(exe);
+            let bundled = exe.parent()?.join("web").join("dist");
+            bundled.join("index.html").is_file().then_some(bundled)
+        })
+        .unwrap_or_else(|| "web/dist".into());
     let app = Router::new()
         .route("/api/sources", get(sources))
         .route("/api/sessions", get(sessions))
