@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
 import { RefreshCw, Search, X } from "lucide-react";
-import type { ExportFormat, SessionSummary, SourceId, SourceSummary } from "@/api";
+import { searchSessions, type ExportFormat, type SessionSummary, type SourceId, type SourceSummary } from "@/api";
+import { SessionPreview } from "@/components/SessionPreview";
 import { SourceIcon } from "@/components/SourceIcon";
 import { Button } from "@/components/ui/button";
 import { collectSourceOptions, resolveSourceLabel, type SourceOption } from "@/sources";
@@ -37,6 +38,24 @@ export function ExportPanel({
 }: ExportPanelProps) {
   const [query, setQuery] = useState("");
   const [showAllPills, setShowAllPills] = useState(false);
+  const [remote, setRemote] = useState<{query: string; filter: SourceId; rows: SessionSummary[]} | null>(null);
+  const [searchError, setSearchError] = useState("");
+  const [preview, setPreview] = useState<string | null>(null);
+  useEffect(() => {
+    const text = query.trim();
+    let active = true;
+    setRemote(null);
+    setSearchError("");
+    if (!text) return;
+    const timer = setTimeout(() => {
+      searchSessions(text, filter).then(rows => {
+        if (active) setRemote({ query: text, filter, rows });
+      }).catch(() => {
+        if (active) setSearchError("全文搜索失败；当前仅显示标题及来源匹配。");
+      });
+    }, 250);
+    return () => { active = false; clearTimeout(timer); };
+  }, [query, filter, sessions]);
 
   const grouped = useMemo(
     () => collectSourceOptions(sources, sessions, labelMap, filter),
@@ -67,6 +86,7 @@ export function ExportPanel({
   const visibleSessions = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return [...sessions];
+    if (remote?.query === query.trim() && remote.filter === filter) return remote.rows;
     return sessions.filter((row) => {
       const label = resolveSourceLabel(row.source, labelMap).toLowerCase();
       return (
@@ -75,7 +95,7 @@ export function ExportPanel({
         label.includes(needle)
       );
     });
-  }, [sessions, labelMap, query]);
+  }, [sessions, labelMap, query, remote, filter]);
 
   const selectedSet = useMemo(() => new Set(selected), [selected]);
   const visibleSelectedCount = useMemo(
@@ -136,7 +156,7 @@ export function ExportPanel({
       {
         accessorKey: "title",
         header: "会话标题",
-        cell: ({ getValue }) => <div className="max-w-md truncate font-medium">{String(getValue())}</div>,
+        cell: ({ getValue, row }) => <button type="button" className="max-w-md truncate text-left font-medium hover:underline" onClick={() => setPreview(row.original.id)}>{String(getValue())}</button>,
       },
       {
         accessorKey: "updatedAt",
@@ -254,7 +274,7 @@ export function ExportPanel({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="搜索会话"
-            placeholder="搜索标题或来源..."
+            placeholder="搜索标题或对话内容..."
             className="h-8 w-full rounded-md border border-input bg-background pr-7 pl-8 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           {query && (
@@ -290,6 +310,8 @@ export function ExportPanel({
         </div>
       </div>
 
+      {searchError && <p role="alert" className="px-3 py-2 text-xs text-muted-foreground">{searchError}</p>}
+      {remote && remote.rows.length === 200 && <p className="px-3 py-2 text-xs text-muted-foreground">最多显示 200 条搜索结果，请缩小搜索范围。</p>}
       <div className="w-full overflow-x-auto">
         <table className="w-full min-w-[640px] border-collapse text-left text-sm">
           <thead className="bg-muted/60 text-xs text-muted-foreground">
@@ -323,6 +345,7 @@ export function ExportPanel({
           </tbody>
         </table>
       </div>
+      {preview && <SessionPreview key={preview} id={preview} onClose={() => setPreview(null)} />}
     </section>
   );
 }

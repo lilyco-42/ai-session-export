@@ -26,6 +26,7 @@ const SOURCE_ICONS: Record<string, SourceIconSpec> = {
   gemini: { Icon: GeminiColor },
   dsh: { Icon: DeepSeekColor },
   codex: { Icon: OpenAIMono, tone: "text-foreground" },
+  chatgpt: { Icon: OpenAIMono, tone: "text-foreground" },
   pi: { Icon: Pi, tone: "text-amber-600 dark:text-amber-400" },
   agy: { Icon: Orbit, tone: "text-primary" },
   opencode: { Icon: Terminal, tone: "text-emerald-600 dark:text-emerald-400" },

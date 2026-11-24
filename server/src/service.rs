@@ -57,6 +57,46 @@ impl AppState {
             .collect())
     }
 
+    pub fn session_detail(&self, id: &str, offset: usize, limit: usize) -> AppResult<crate::inspection::SessionDetail> {
+        let states = self.lock()?;
+        let record = adapters::find_session(&states, id).ok_or_else(|| AppError::not_found(id))?;
+        Ok(crate::inspection::detail(record, offset, limit))
+    }
+
+    pub fn search(&self, query: &str, source: &SourceQuery, limit: usize) -> AppResult<Vec<SessionSummary>> {
+        let needle = query.trim().to_lowercase();
+        if needle.is_empty() { return Err(AppError::invalid("query must not be empty")); }
+        let wanted = parse_source(source.source.as_deref())?;
+        let states = self.lock()?;
+        let mut results: Vec<_> = states.iter()
+            .filter(|s| wanted.is_none_or(|id| s.summary.id == id))
+            .flat_map(|s| s.sessions.iter())
+            .filter(|r| crate::inspection::matches(r, &needle))
+            .map(|r| r.summary.clone()).collect();
+        results.sort_by(|a,b| b.updated_at.cmp(&a.updated_at));
+        results.truncate(limit.clamp(1,200));
+        Ok(results)
+    }
+
+    pub fn task_status(&self, id: &str) -> AppResult<crate::inspection::TaskObservation> {
+        let states = self.lock()?;
+        let record = adapters::find_session(&states, id).ok_or_else(|| AppError::not_found(id))?;
+        crate::inspection::task(record)
+    }
+
+    pub fn tasks(&self, query: &SourceQuery, limit: usize) -> AppResult<Vec<crate::inspection::TaskObservation>> {
+        let mut rows = self.sessions(query)?;
+        rows.sort_by(|a,b| b.updated_at.cmp(&a.updated_at));
+        rows.truncate(limit.clamp(1,200));
+        rows.iter().map(|row| self.task_status(&row.id)).collect()
+    }
+
+    pub fn resume_plan(&self, id: &str) -> AppResult<crate::inspection::ResumePlan> {
+        let states = self.lock()?;
+        let record = adapters::find_session(&states, id).ok_or_else(|| AppError::not_found(id))?;
+        Ok(crate::inspection::resume(record))
+    }
+
     pub fn export(&self, request: &ExportRequest) -> AppResult<ExportResponse> {
         if request.ids.is_empty() {
             return Err(AppError::invalid("ids must not be empty"));

@@ -1,6 +1,7 @@
 mod agy;
 mod codebuddy;
 mod codex;
+mod chatgpt;
 mod dsh;
 mod interchange;
 mod native_files;
@@ -69,6 +70,7 @@ pub fn load_source(tool: ToolId) -> AppResult<SourceState> {
         ToolId::Agy => agy::load(),
         ToolId::Opencode => opencode::load(),
         ToolId::Codex => codex::load(),
+        ToolId::Chatgpt => chatgpt::load(),
         ToolId::Codearts => codebuddy::load(),
         ToolId::Dsh => dsh::load(),
         ToolId::Claude | ToolId::Gemini | ToolId::Pi => native_files::load(tool),

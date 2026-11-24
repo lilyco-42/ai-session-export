@@ -9,6 +9,7 @@ export const BUILTIN_SOURCE_IDS: readonly BuiltInSourceId[] = [
   "claude",
   "gemini",
   "pi",
+  "chatgpt",
 ];
 
 export const BUILTIN_SOURCE_LABELS: Record<BuiltInSourceId, string> = {
@@ -20,6 +21,7 @@ export const BUILTIN_SOURCE_LABELS: Record<BuiltInSourceId, string> = {
   claude: "Claude Code",
   gemini: "Gemini CLI",
   pi: "Pi",
+  chatgpt: "ChatGPT (export)",
 };
 
 const BUILTIN_SET: ReadonlySet<string> = new Set(BUILTIN_SOURCE_IDS);
