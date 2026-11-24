@@ -39,6 +39,7 @@ async fn main() {
         .map(std::path::PathBuf::from)
         .or_else(|| {
             let exe = std::env::current_exe().ok()?;
+            let exe = exe.canonicalize().unwrap_or(exe);
             let bundled = exe.parent()?.join("web").join("dist");
             bundled.join("index.html").is_file().then_some(bundled)
         })

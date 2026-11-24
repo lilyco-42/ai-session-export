@@ -56,6 +56,32 @@ jobs:
         run: cargo +stable build --locked --release --manifest-path server/Cargo.toml --target "${{ matrix.target }}"
       - name: Package and smoke test
         run: python scripts/package_release.py "${{ matrix.target }}" --smoke-test
+      - name: Test installer (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          set -euo pipefail
+          cd release-assets
+          shasum -a 256 *.tar.gz > SHA256SUMS
+          cd ..
+          export AI_SESSION_RELEASE_DIR="$PWD/release-assets"
+          export AI_SESSION_INSTALL_PREFIX="$(mktemp -d)"
+          sh install.sh
+          sh install.sh
+          "$AI_SESSION_INSTALL_PREFIX/bin/ai-session-export" --help
+          rm release-assets/SHA256SUMS
+      - name: Test installer (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $asset = Get-ChildItem release-assets/*.zip
+          $hash = (Get-FileHash $asset.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $($asset.Name)" | Set-Content release-assets/SHA256SUMS
+          $root = Join-Path $env:RUNNER_TEMP ('installer-' + [Guid]::NewGuid())
+          ./install.ps1 -ReleaseDir (Resolve-Path release-assets).Path -InstallRoot $root -NoPath
+          ./install.ps1 -ReleaseDir (Resolve-Path release-assets).Path -InstallRoot $root -NoPath
+          & (Join-Path $root 'app/ai-session-export-server.exe') --help
+          if ($LASTEXITCODE -ne 0) { throw 'Installed executable failed' }
+          Remove-Item release-assets/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.target }}
@@ -74,6 +100,9 @@ jobs:
       group: release-${{ github.ref }}
       cancel-in-progress: false
     steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           pattern: release-*
@@ -83,6 +112,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          cp install.sh install.ps1 release-assets/
           cd release-assets
           for target in x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu x86_64-apple-darwin aarch64-apple-darwin x86_64-pc-windows-msvc aarch64-pc-windows-msvc; do
             case "$target" in
@@ -91,7 +121,7 @@ jobs:
             esac
             test -s "ai-session-export-${target}.${ext}"
           done
-          sha256sum ai-session-export-*.tar.gz ai-session-export-*.zip > SHA256SUMS
+          sha256sum ai-session-export-*.tar.gz ai-session-export-*.zip install.sh install.ps1 > SHA256SUMS
           sha256sum --check SHA256SUMS
       - name: Publish complete release
         env:
