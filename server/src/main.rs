@@ -18,6 +18,7 @@ fn wants_lilyco(args: &[String]) -> bool {
             || arg == "--help"
             || arg == "-h"
             || arg.starts_with("ai-session-")
+            || arg.starts_with("ai-task-")
     })
 }
 
@@ -44,13 +45,7 @@ async fn main() {
             bundled.join("index.html").is_file().then_some(bundled)
         })
         .unwrap_or_else(|| "web/dist".into());
-    let app = Router::new()
-        .route("/api/sources", get(sources))
-        .route("/api/sessions", get(sessions))
-        .route("/api/export", post(export))
-        .route("/exports/{name}", get(download))
-        .fallback_service(ServeDir::new(web_dir))
-        .with_state(state);
+    let app = router(state, web_dir);
     let listener = match tokio::net::TcpListener::bind("127.0.0.1:8788").await {
         Ok(listener) => listener,
         Err(error) => {
@@ -63,6 +58,75 @@ async fn main() {
         eprintln!("server failed: {error}");
         std::process::exit(1);
     }
+}
+
+fn router(state: Arc<AppState>, web_dir: std::path::PathBuf) -> Router {
+    Router::new()
+        .route("/api/sources", get(sources))
+        .route("/api/sessions", get(sessions))
+        .route("/api/session", get(session_detail))
+        .route("/api/search", get(search))
+        .route("/api/tasks", get(tasks))
+        .route("/api/task", get(task_status))
+        .route("/api/resume", get(resume_plan))
+        .route("/api/export", post(export))
+        .route("/exports/{name}", get(download))
+        .fallback_service(ServeDir::new(web_dir))
+        .with_state(state)
+}
+
+#[derive(serde::Deserialize)]
+struct DetailQuery {
+    id: String,
+    #[serde(default)]
+    offset: usize,
+    #[serde(default = "default_page")]
+    limit: usize,
+}
+fn default_page() -> usize { 100 }
+fn default_limit() -> usize { 50 }
+
+#[derive(serde::Deserialize)]
+struct SearchQuery {
+    query: String,
+    source: Option<String>,
+    #[serde(default = "default_limit")]
+    limit: usize,
+}
+
+#[derive(serde::Deserialize)]
+struct TaskQuery {
+    source: Option<String>,
+    #[serde(default = "default_limit")]
+    limit: usize,
+}
+
+#[derive(serde::Deserialize)]
+struct IdQuery { id: String }
+
+async fn session_detail(State(state): State<Arc<AppState>>, Query(q): Query<DetailQuery>)
+    -> Result<Json<ai_session_export_server::inspection::SessionDetail>, AppError> {
+    Ok(Json(state.session_detail(&q.id, q.offset, q.limit)?))
+}
+
+async fn search(State(state): State<Arc<AppState>>, Query(q): Query<SearchQuery>)
+    -> Result<Json<Vec<ai_session_export_server::dto::SessionSummary>>, AppError> {
+    Ok(Json(state.search(&q.query, &SourceQuery { source: q.source }, q.limit)?))
+}
+
+async fn tasks(State(state): State<Arc<AppState>>, Query(q): Query<TaskQuery>)
+    -> Result<Json<Vec<ai_session_export_server::inspection::TaskObservation>>, AppError> {
+    Ok(Json(state.tasks(&SourceQuery { source: q.source }, q.limit)?))
+}
+
+async fn task_status(State(state): State<Arc<AppState>>, Query(q): Query<IdQuery>)
+    -> Result<Json<ai_session_export_server::inspection::TaskObservation>, AppError> {
+    Ok(Json(state.task_status(&q.id)?))
+}
+
+async fn resume_plan(State(state): State<Arc<AppState>>, Query(q): Query<IdQuery>)
+    -> Result<Json<ai_session_export_server::inspection::ResumePlan>, AppError> {
+    Ok(Json(state.resume_plan(&q.id)?))
 }
 
 async fn sources(
@@ -116,10 +180,34 @@ async fn download(State(state): State<Arc<AppState>>, Path(name): Path<String>) 
 mod tests {
     use super::*;
 
+    #[tokio::test]
+    async fn inspection_endpoints_return_fixture_data() {
+        use ai_session_export_server::{dto::SessionSummary, model::{ChatMessage, SessionRecord, SourceState}};
+        use axum::{body::{Body, to_bytes}, http::Request};
+        use tower::ServiceExt;
+        let temp = tempfile::tempdir().unwrap();
+        let record = SessionRecord { summary: SessionSummary { id: "chatgpt:fixture".into(), source: "chatgpt".into(), title: "Example".into(), updated_at: "2026-01-01T00:00:00Z".into() }, messages: vec![ChatMessage { role: "user".into(), kind: "text".into(), text: "test needle".into() }], raw_ref: "fixture".into() };
+        let state = AppState::with_sources(vec![SourceState::named("chatgpt", "ChatGPT", vec![record])],temp.path().join("out")).unwrap();
+        let app = router(Arc::new(state), temp.path().to_path_buf());
+        for (uri, key) in [("/api/session?id=chatgpt%3Afixture", "messages"), ("/api/task?id=chatgpt%3Afixture", "status"), ("/api/resume?id=chatgpt%3Afixture", "supported")] {
+            let response=app.clone().oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap()).await.unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            let value: serde_json::Value=serde_json::from_slice(&to_bytes(response.into_body(), 65536).await.unwrap()).unwrap();
+            assert!(value.get(key).is_some());
+        }
+        let response=app.clone().oneshot(Request::builder().uri("/api/search?query=needle").body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(response.status(),StatusCode::OK);
+        let value: serde_json::Value=serde_json::from_slice(&to_bytes(response.into_body(),65536).await.unwrap()).unwrap();
+        assert_eq!(value.as_array().unwrap().len(),1);
+        let response=app.oneshot(Request::builder().uri("/api/session?id=missing").body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(response.status(),StatusCode::NOT_FOUND);
+    }
+
     #[test]
     fn lilyco_mode_detects_cli_and_mcp_requests() {
         assert!(wants_lilyco(&["--mcp".into()]));
         assert!(wants_lilyco(&["ai-session-sources".into()]));
+        assert!(wants_lilyco(&["ai-task-list".into()]));
         assert!(!wants_lilyco(&[]));
     }
 }

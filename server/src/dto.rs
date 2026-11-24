@@ -11,10 +11,11 @@ pub enum ToolId {
     Claude,
     Gemini,
     Pi,
+    Chatgpt,
 }
 
 impl ToolId {
-    pub const ALL: [ToolId; 8] = [
+    pub const ALL: [ToolId; 9] = [
         ToolId::Codearts,
         ToolId::Opencode,
         ToolId::Agy,
@@ -23,6 +24,7 @@ impl ToolId {
         ToolId::Claude,
         ToolId::Gemini,
         ToolId::Pi,
+        ToolId::Chatgpt,
     ];
 
     pub fn as_str(self) -> &'static str {
@@ -35,6 +37,7 @@ impl ToolId {
             ToolId::Claude => "claude",
             ToolId::Gemini => "gemini",
             ToolId::Pi => "pi",
+            ToolId::Chatgpt => "chatgpt",
         }
     }
 
@@ -48,6 +51,7 @@ impl ToolId {
             ToolId::Claude => "Claude Code",
             ToolId::Gemini => "Gemini CLI",
             ToolId::Pi => "Pi",
+            ToolId::Chatgpt => "ChatGPT (export)",
         }
     }
 }

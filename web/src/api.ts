@@ -8,7 +8,8 @@ export type BuiltInSourceId =
   | "dsh"
   | "claude"
   | "gemini"
-  | "pi";
+  | "pi"
+  | "chatgpt";
 export type SourceStatus = "ready" | "missing" | "error";
 export type ExportFormat = "markdown" | "jsonl" | "raw" | "html";
 
@@ -132,4 +133,39 @@ export async function exportSessions(ids: string[], format: ExportFormat): Promi
     });
   }
   return { downloadUrl: raw.downloadUrl };
+}
+
+export interface SessionDetail {
+  session: SessionSummary;
+  messages: { role: string; kind: string; text: string }[];
+  totalMessages: number;
+  nextOffset: number | null;
+}
+export interface TaskObservation {
+  session: SessionSummary;
+  status: "unknown" | "started" | "completed" | "aborted";
+  evidence: string;
+  observedAt: string | null;
+  turnId: string | null;
+  live: boolean;
+}
+export interface ResumePlan {
+  session: SessionSummary;
+  supported: boolean;
+  argv: string[];
+  explanation: string;
+}
+export async function searchSessions(query: string, source: SourceId): Promise<SessionSummary[]> {
+  const raw = await readJson("/api/search?" + new URLSearchParams({ query, source, limit: "200" }));
+  if (!Array.isArray(raw)) throw new Error("Invalid search response");
+  return raw.map(asSession).filter((x): x is SessionSummary => x !== null);
+}
+export async function loadSessionDetail(id: string, offset = 0): Promise<SessionDetail> {
+  return await readJson("/api/session?" + new URLSearchParams({ id, offset: String(offset) })) as SessionDetail;
+}
+export async function loadTaskStatus(id: string): Promise<TaskObservation> {
+  return await readJson("/api/task?" + new URLSearchParams({ id })) as TaskObservation;
+}
+export async function loadResumePlan(id: string): Promise<ResumePlan> {
+  return await readJson("/api/resume?" + new URLSearchParams({ id })) as ResumePlan;
 }

@@ -1,6 +1,6 @@
 use crate::dto::{SessionSummary, SourceSummary, ToolId};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ChatMessage {
     pub role: String,
     pub kind: String,
