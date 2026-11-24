@@ -8,7 +8,9 @@ use crate::error::{AppError, AppResult};
 use crate::model::{ChatMessage, SessionRecord};
 
 pub fn load() -> AppResult<Vec<SessionRecord>> {
-    let root = home_dir().join(".codex");
+    let root = std::env::var_os("CODEX_HOME")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| home_dir().join(".codex"));
     let index_path = root.join("session_index.jsonl");
     let mut index: BTreeMap<String, (String, String)> = BTreeMap::new();
     if index_path.exists() {
@@ -33,14 +35,19 @@ pub fn load() -> AppResult<Vec<SessionRecord>> {
         }
     }
     let mut found = Vec::new();
+    collect_rollouts(&root.join("archived_sessions"), &mut found)?;
     collect_rollouts(&root.join("sessions"), &mut found)?;
+    let found: BTreeMap<_, _> = found
+        .into_iter()
+        .map(|(id, path, time)| (id, (path, time)))
+        .collect();
     let mut sessions = Vec::new();
-    for (id, path, fallback_updated) in found {
+    for (id, (path, fallback_updated)) in found {
         let messages = load_messages(&path)?;
         let (index_title, index_updated) = index
             .get(&id)
             .cloned()
-            .unwrap_or_else(|| (id.clone(), fallback_updated.clone()));
+            .unwrap_or_else(|| (String::new(), fallback_updated.clone()));
         let title = if index_title.trim().is_empty() {
             title_from_messages(&messages)
         } else {
@@ -54,7 +61,7 @@ pub fn load() -> AppResult<Vec<SessionRecord>> {
         sessions.push(SessionRecord {
             summary: SessionSummary {
                 id,
-                source: ToolId::Codex,
+                source: ToolId::Codex.as_str().into(),
                 title,
                 updated_at,
             },
@@ -87,6 +94,9 @@ fn load_messages(path: &std::path::Path) -> AppResult<Vec<ChatMessage>> {
             .get("role")
             .and_then(serde_json::Value::as_str)
             .unwrap_or("unknown");
+        if !matches!(role, "user" | "assistant") {
+            continue;
+        }
         let text = extract_text(payload.get("content").unwrap_or(&serde_json::Value::Null));
         if !text.trim().is_empty() {
             messages.push(ChatMessage {
@@ -111,15 +121,23 @@ fn collect_rollouts(
     for entry in entries {
         let entry = entry.map_err(|error| AppError::source(format!("codex dir entry: {error}")))?;
         let path = entry.path();
-        if path.is_dir() {
+        if entry.file_type().is_ok_and(|ty| ty.is_dir()) {
             collect_rollouts(&path, output)?;
         } else if path
             .file_name()
             .and_then(|name| name.to_str())
             .is_some_and(|name| name.starts_with("rollout-") && name.ends_with(".jsonl"))
         {
-            let lines = read_text_lines(&path)?;
-            let Some(first) = lines.first().and_then(|line| parse_line(line)) else {
+            use std::io::BufRead;
+            let Ok(file) = std::fs::File::open(&path) else {
+                continue;
+            };
+            let Some(first) = std::io::BufReader::new(file)
+                .lines()
+                .next()
+                .and_then(Result::ok)
+                .and_then(|line| parse_line(&line))
+            else {
                 continue;
             };
             let payload = first.get("payload");

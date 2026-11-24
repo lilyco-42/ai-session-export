@@ -8,15 +8,21 @@ pub enum ToolId {
     Agy,
     Codex,
     Dsh,
+    Claude,
+    Gemini,
+    Pi,
 }
 
 impl ToolId {
-    pub const ALL: [ToolId; 5] = [
+    pub const ALL: [ToolId; 8] = [
         ToolId::Codearts,
         ToolId::Opencode,
         ToolId::Agy,
         ToolId::Codex,
         ToolId::Dsh,
+        ToolId::Claude,
+        ToolId::Gemini,
+        ToolId::Pi,
     ];
 
     pub fn as_str(self) -> &'static str {
@@ -26,6 +32,9 @@ impl ToolId {
             ToolId::Agy => "agy",
             ToolId::Codex => "codex",
             ToolId::Dsh => "dsh",
+            ToolId::Claude => "claude",
+            ToolId::Gemini => "gemini",
+            ToolId::Pi => "pi",
         }
     }
 
@@ -36,6 +45,9 @@ impl ToolId {
             ToolId::Agy => "AGY / Antigravity",
             ToolId::Codex => "Codex CLI",
             ToolId::Dsh => "DeepSeek Harness",
+            ToolId::Claude => "Claude Code",
+            ToolId::Gemini => "Gemini CLI",
+            ToolId::Pi => "Pi",
         }
     }
 }
@@ -51,7 +63,7 @@ pub enum SourceStatus {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SourceSummary {
-    pub id: ToolId,
+    pub id: String,
     pub label: String,
     pub status: SourceStatus,
     pub session_count: usize,
@@ -61,7 +73,7 @@ pub struct SourceSummary {
 #[serde(rename_all = "camelCase")]
 pub struct SessionSummary {
     pub id: String,
-    pub source: ToolId,
+    pub source: String,
     pub title: String,
     pub updated_at: String,
 }

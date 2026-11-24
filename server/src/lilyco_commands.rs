@@ -44,7 +44,7 @@ fn run_sources(app: &Sources, ctx: &Context) -> Result<serde_json::Value, AppErr
 #[derive(App)]
 #[app(
     name = "ai-session-list",
-    about = "List AI sessions by source: all, codearts, opencode, agy, codex, dsh (read-only)",
+    about = "List AI sessions by source id, or all (read-only)",
     run = "run_list"
 )]
 pub struct List {

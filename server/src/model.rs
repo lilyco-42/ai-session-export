@@ -22,6 +22,10 @@ pub struct SourceState {
 
 impl SourceState {
     pub fn new(id: ToolId, sessions: Vec<SessionRecord>) -> Self {
+        Self::named(id.as_str(), id.label(), sessions)
+    }
+
+    pub fn named(id: &str, label: &str, sessions: Vec<SessionRecord>) -> Self {
         let status = if sessions.is_empty() {
             crate::dto::SourceStatus::Missing
         } else {
@@ -29,8 +33,8 @@ impl SourceState {
         };
         Self {
             summary: SourceSummary {
-                id,
-                label: id.label().to_string(),
+                id: id.into(),
+                label: label.into(),
                 status,
                 session_count: sessions.len(),
             },

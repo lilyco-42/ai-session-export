@@ -2,6 +2,8 @@ mod agy;
 mod codebuddy;
 mod codex;
 mod dsh;
+mod interchange;
+mod native_files;
 mod opencode;
 
 use std::path::{Path, PathBuf};
@@ -13,7 +15,8 @@ use crate::model::{ChatMessage, SessionRecord, SourceState};
 pub fn home_dir() -> PathBuf {
     std::env::var_os("HOME")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/home/lilyco"))
+        .or_else(|| std::env::var_os("USERPROFILE").map(PathBuf::from))
+        .unwrap_or_else(|| PathBuf::from("."))
 }
 
 pub fn text_from_content(value: &serde_json::Value) -> String {
@@ -58,9 +61,7 @@ pub fn updated_at_from_millis(value: Option<i64>) -> String {
 }
 
 pub fn min_len(left: &str, right: &str, limit: usize) -> std::cmp::Ordering {
-    let left = &left[..left.len().min(limit)];
-    let right = &right[..right.len().min(limit)];
-    right.cmp(left)
+    right.chars().take(limit).cmp(left.chars().take(limit))
 }
 
 pub fn load_source(tool: ToolId) -> AppResult<SourceState> {
@@ -70,20 +71,59 @@ pub fn load_source(tool: ToolId) -> AppResult<SourceState> {
         ToolId::Codex => codex::load(),
         ToolId::Codearts => codebuddy::load(),
         ToolId::Dsh => dsh::load(),
+        ToolId::Claude | ToolId::Gemini | ToolId::Pi => native_files::load(tool),
     }?;
     Ok(SourceState::new(tool, sessions))
 }
 
 pub fn load_all() -> AppResult<Vec<SourceState>> {
-    ToolId::ALL
+    let mut states: Vec<_> = ToolId::ALL
         .iter()
         .copied()
-        .map(load_source)
-        .filter(|state| match state {
-            Ok(state) => !state.sessions.is_empty(),
-            Err(_) => true,
+        .map(|tool| {
+            load_source(tool).unwrap_or_else(|error| {
+                eprintln!("{error}");
+                let mut state = SourceState::new(tool, Vec::new());
+                state.summary.status = crate::dto::SourceStatus::Error;
+                state
+            })
         })
-        .collect()
+        .collect();
+    match interchange::load() {
+        Ok(custom) => states.extend(custom),
+        Err(error) => eprintln!("{error}"),
+    }
+    Ok(states)
+}
+
+pub fn valid_source_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 64
+        && id
+            .bytes()
+            .all(|b| matches!(b, b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_'))
+}
+
+fn file_paths(dir: &Path, extension: &str, output: &mut Vec<PathBuf>) -> AppResult<()> {
+    if !dir.is_dir() {
+        return Ok(());
+    }
+    let entries = std::fs::read_dir(dir)
+        .map_err(|error| AppError::source(format!("{}: {error}", dir.display())))?;
+    for entry in entries.flatten() {
+        let Ok(kind) = entry.file_type() else {
+            continue;
+        };
+        let path = entry.path();
+        if kind.is_dir() {
+            file_paths(&path, extension, output)?;
+        } else if kind.is_file()
+            && path.extension().and_then(|value| value.to_str()) == Some(extension)
+        {
+            output.push(path);
+        }
+    }
+    Ok(())
 }
 
 pub fn find_session<'a>(sources: &'a [SourceState], id: &str) -> Option<&'a SessionRecord> {

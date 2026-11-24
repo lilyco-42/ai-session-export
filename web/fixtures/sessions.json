@@ -34,5 +34,35 @@
     "source": "dsh",
     "title": "DSH Agent 会话",
     "updatedAt": "2026-11-23T11:40:00+08:00"
+  },
+  {
+    "id": "claude-refactor-01",
+    "source": "claude",
+    "title": "Claude Code 架构重构讨论",
+    "updatedAt": "2026-11-24T09:15:00Z"
+  },
+  {
+    "id": "pi-session-42",
+    "source": "pi",
+    "title": "Pi Agent CLI 工具链调试",
+    "updatedAt": "2026-11-24T10:20:00Z"
+  },
+  {
+    "id": "cursor:composer-7",
+    "source": "cursor",
+    "title": "Cursor Composer 前端布局修复",
+    "updatedAt": "2026-11-24T11:05:00Z"
+  },
+  {
+    "id": "my-agent:session-123",
+    "source": "my-agent",
+    "title": "Custom JSONL Agent 示例会话",
+    "updatedAt": "2026-11-24T12:00:00Z"
+  },
+  {
+    "id": "team-notes-bot:weekly-1",
+    "source": "team-notes-bot",
+    "title": "周报自动汇总记录",
+    "updatedAt": "2026-11-24T13:30:00Z"
   }
 ]

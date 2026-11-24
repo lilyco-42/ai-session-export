@@ -1,9 +1,9 @@
 [
   {
-    "id": "agy",
-    "label": "AGY / Antigravity",
+    "id": "codearts",
+    "label": "CodeArts / CodeBuddy",
     "status": "ready",
-    "sessionCount": 26
+    "sessionCount": 2
   },
   {
     "id": "opencode",
@@ -12,14 +12,14 @@
     "sessionCount": 11
   },
   {
-    "id": "codex",
-    "label": "Codex CLI",
+    "id": "agy",
+    "label": "AGY / Antigravity",
     "status": "ready",
-    "sessionCount": 2
+    "sessionCount": 26
   },
   {
-    "id": "codearts",
-    "label": "CodeArts / CodeBuddy",
+    "id": "codex",
+    "label": "Codex CLI",
     "status": "ready",
     "sessionCount": 2
   },
@@ -28,5 +28,47 @@
     "label": "DeepSeek Harness",
     "status": "ready",
     "sessionCount": 3
+  },
+  {
+    "id": "claude",
+    "label": "Claude Code",
+    "status": "ready",
+    "sessionCount": 8
+  },
+  {
+    "id": "gemini",
+    "label": "Gemini CLI",
+    "status": "missing",
+    "sessionCount": 0
+  },
+  {
+    "id": "pi",
+    "label": "Pi",
+    "status": "ready",
+    "sessionCount": 4
+  },
+  {
+    "id": "cursor",
+    "label": "Cursor IDE",
+    "status": "ready",
+    "sessionCount": 5
+  },
+  {
+    "id": "copilot",
+    "label": "GitHub Copilot",
+    "status": "missing",
+    "sessionCount": 0
+  },
+  {
+    "id": "my-agent",
+    "label": "my-agent",
+    "status": "ready",
+    "sessionCount": 2
+  },
+  {
+    "id": "team-notes-bot",
+    "label": "Team Notes Custom Exporter",
+    "status": "ready",
+    "sessionCount": 1
   }
 ]

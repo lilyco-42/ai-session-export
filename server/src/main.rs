@@ -9,7 +9,7 @@ use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use tower_http::cors::CorsLayer;
+use tower_http::services::ServeDir;
 
 fn wants_lilyco(args: &[String]) -> bool {
     args.iter().any(|arg| {
@@ -35,12 +35,13 @@ async fn main() {
             std::process::exit(1);
         }
     };
+    let web_dir = std::env::var_os("AI_SESSION_WEB_DIR").unwrap_or_else(|| "web/dist".into());
     let app = Router::new()
         .route("/api/sources", get(sources))
         .route("/api/sessions", get(sessions))
         .route("/api/export", post(export))
         .route("/exports/{name}", get(download))
-        .layer(CorsLayer::permissive())
+        .fallback_service(ServeDir::new(web_dir))
         .with_state(state);
     let listener = match tokio::net::TcpListener::bind("127.0.0.1:8788").await {
         Ok(listener) => listener,

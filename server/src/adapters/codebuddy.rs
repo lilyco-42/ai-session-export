@@ -51,7 +51,7 @@ pub fn load() -> AppResult<Vec<SessionRecord>> {
         sessions.push(SessionRecord {
             summary: SessionSummary {
                 id,
-                source: ToolId::Codearts,
+                source: ToolId::Codearts.as_str().into(),
                 title,
                 updated_at: format_millis(Some(updated)),
             },

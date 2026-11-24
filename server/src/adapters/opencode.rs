@@ -65,7 +65,7 @@ pub fn load() -> AppResult<Vec<SessionRecord>> {
         sessions.push(SessionRecord {
             summary: SessionSummary {
                 id,
-                source: ToolId::Opencode,
+                source: ToolId::Opencode.as_str().into(),
                 title,
                 updated_at: crate::adapters::format_millis(Some(updated)),
             },

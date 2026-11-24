@@ -3,7 +3,7 @@ use std::sync::{Mutex, MutexGuard};
 
 use crate::adapters;
 use crate::dto::{
-    ExportFormat, ExportRequest, ExportResponse, SessionSummary, SourceQuery, SourceSummary, ToolId,
+    ExportFormat, ExportRequest, ExportResponse, SessionSummary, SourceQuery, SourceSummary,
 };
 use crate::error::{AppError, AppResult};
 use crate::model::{SessionRecord, SourceState};
@@ -78,15 +78,11 @@ impl AppState {
     }
 }
 
-pub fn parse_source(value: Option<&str>) -> AppResult<Option<ToolId>> {
+pub fn parse_source(value: Option<&str>) -> AppResult<Option<&str>> {
     match value.unwrap_or("all") {
         "all" => Ok(None),
-        other => ToolId::ALL
-            .iter()
-            .copied()
-            .find(|tool| tool.as_str() == other)
-            .map(Some)
-            .ok_or_else(|| AppError::invalid(format!("unknown source: {other}"))),
+        source if adapters::valid_source_id(source) => Ok(Some(source)),
+        source => Err(AppError::invalid(format!("invalid source id: {source}"))),
     }
 }
 
@@ -222,7 +218,7 @@ mod tests {
             vec![SessionRecord {
                 summary: SessionSummary {
                     id: "test-session".into(),
-                    source: ToolId::Agy,
+                    source: ToolId::Agy.as_str().into(),
                     title: "测试会话".into(),
                     updated_at: "2026-01-01T00:00:00Z".into(),
                 },
@@ -240,9 +236,9 @@ mod tests {
 
     #[test]
     fn parses_known_source() {
-        assert_eq!(parse_source(Some("agy")).unwrap(), Some(ToolId::Agy));
+        assert_eq!(parse_source(Some("agy")).unwrap(), Some("agy"));
         assert_eq!(parse_source(None).unwrap(), None);
-        assert!(parse_source(Some("unknown")).is_err());
+        assert!(parse_source(Some("../unknown")).is_err());
     }
 
     #[test]
@@ -274,7 +270,7 @@ mod tests {
     #[test]
     fn source_summary_serializes_camel_case() {
         let summary = SourceSummary {
-            id: ToolId::Agy,
+            id: ToolId::Agy.as_str().into(),
             label: "AGY".into(),
             status: SourceStatus::Ready,
             session_count: 26,

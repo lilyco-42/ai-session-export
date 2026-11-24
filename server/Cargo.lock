@@ -197,6 +197,7 @@ checksum = "1aa79e62e7697b8e29b513a68abacf485adcd1fe8284a4316c5ae868e6633327"
 dependencies = [
  "iana-time-zone",
  "num-traits",
+ "serde",
  "windows-link",
 ]
 
@@ -302,6 +303,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92d699e522242e69e3003b94ecc1f960f3a5e015aa7c5d7486e65ad01dd94f5e"
 
 [[package]]
+name = "futures-sink"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1944426bf7d03f1d14f708785e4b33efd750b36d48a157b836b3efc15ede8e1d"
+
+[[package]]
 name = "futures-task"
 version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -386,6 +393,12 @@ dependencies = [
  "http-body",
  "pin-project-lite",
 ]
+
+[[package]]
+name = "http-range-header"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9171a2ea8a68358193d15dd5d70c1c10a2afc3e7e4c5bc92bc9f025cebd7359c"
 
 [[package]]
 name = "httparse"
@@ -500,6 +513,7 @@ dependencies = [
 [[package]]
 name = "lilyco"
 version = "0.3.0"
+source = "git+https://github.com/lilyco-42/lilyco.git?rev=14a81a6a3b4434a1a08667d0c6190dbb6e894d32#14a81a6a3b4434a1a08667d0c6190dbb6e894d32"
 dependencies = [
  "lilyco-cli",
  "lilyco-core",
@@ -511,6 +525,7 @@ dependencies = [
 [[package]]
 name = "lilyco-cli"
 version = "0.3.0"
+source = "git+https://github.com/lilyco-42/lilyco.git?rev=14a81a6a3b4434a1a08667d0c6190dbb6e894d32#14a81a6a3b4434a1a08667d0c6190dbb6e894d32"
 dependencies = [
  "clap",
  "lilyco-core",
@@ -520,6 +535,7 @@ dependencies = [
 [[package]]
 name = "lilyco-core"
 version = "0.3.0"
+source = "git+https://github.com/lilyco-42/lilyco.git?rev=14a81a6a3b4434a1a08667d0c6190dbb6e894d32#14a81a6a3b4434a1a08667d0c6190dbb6e894d32"
 dependencies = [
  "serde",
  "serde_json",
@@ -529,6 +545,7 @@ dependencies = [
 [[package]]
 name = "lilyco-macros"
 version = "0.3.0"
+source = "git+https://github.com/lilyco-42/lilyco.git?rev=14a81a6a3b4434a1a08667d0c6190dbb6e894d32#14a81a6a3b4434a1a08667d0c6190dbb6e894d32"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -538,6 +555,7 @@ dependencies = [
 [[package]]
 name = "lilyco-mcp"
 version = "0.3.0"
+source = "git+https://github.com/lilyco-42/lilyco.git?rev=14a81a6a3b4434a1a08667d0c6190dbb6e894d32#14a81a6a3b4434a1a08667d0c6190dbb6e894d32"
 dependencies = [
  "lilyco-core",
  "serde_json",
@@ -572,6 +590,16 @@ name = "mime"
 version = "0.3.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5848f5a9e8117cf94f2f90faac24a87ff81600ff8628c1e3deaab572e76bfa1"
+
+[[package]]
+name = "mime_guess"
+version = "2.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7c44f8e672c00fe5308fa235f821cb4198414e1c77935c1ab6948d3fd78550e"
+dependencies = [
+ "mime",
+ "unicase",
+]
 
 [[package]]
 name = "mio"
@@ -873,6 +901,7 @@ version = "1.54.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b52fd3255258d26fac7264ab5a76b53c13367136dc011d3d6ad4f8ed070396a3"
 dependencies = [
+ "bytes",
  "libc",
  "mio",
  "pin-project-lite",
@@ -890,6 +919,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.10",
+]
+
+[[package]]
+name = "tokio-util"
+version = "0.7.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e464cf451ba96ebfc6f9b6542f17ee8b8956e33f1e40d9690624e59d7a7f8a4b"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "futures-sink",
+ "pin-project-lite",
+ "tokio",
 ]
 
 [[package]]
@@ -916,9 +958,19 @@ checksum = "08a05a66a4fdd61cbbe0a1d755ffe0ca6aba159dd4820936a0ff8a8278245b9c"
 dependencies = [
  "bitflags",
  "bytes",
+ "futures-core",
+ "futures-util",
  "http",
+ "http-body",
+ "http-body-util",
+ "http-range-header",
+ "httpdate",
+ "mime",
+ "mime_guess",
  "percent-encoding",
  "pin-project-lite",
+ "tokio",
+ "tokio-util",
  "tower-layer",
  "tower-service",
 ]
@@ -966,6 +1018,12 @@ checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
 dependencies = [
  "once_cell",
 ]
+
+[[package]]
+name = "unicase"
+version = "2.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "357cc3acc6a036009fd6c973ed009037c732d60d0b4f6c673e9041497482a28f"
 
 [[package]]
 name = "unicode-ident"
